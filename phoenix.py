@@ -32,6 +32,7 @@ import multiprocessing.reduction
 import plugin_system
 
 from logging import log, STD_OUT, STD_ERR
+from daemon import daemonize
 
 
 RESEND_TIMEOUT = 60
@@ -324,8 +325,8 @@ if __name__ == "__main__":
             sys.exit(2)
 
     for o, a in opts:
-        if o == "--daemon":
-            daemon(PID_FILE)
+        if o in ("--daemon", "--daemonize"):
+            daemonize(PID_FILE)
         elif o == "--ip":
             ip = a
         elif o == "--port":
