@@ -298,8 +298,11 @@ class Phoenix(smtpd.SMTPServer):
             self._q.put((False, None))
 
 
-def signal_handler(signal, frame):
-    print "Crtl+C pressed. Shutting down."
+def signal_handler(_signal, frame):
+    if _signal == signal.SIGINT:
+        log("Crtl+C pressed. Shutting down.", STD_OUT)
+    else:
+        log("Shutting down.", STD_OUT)
     phoenix.shutdown()
     sys.exit(0)
 
@@ -370,4 +373,5 @@ if __name__ == "__main__":
 
     phoenix = Phoenix(localaddr=(ip, port), remoteaddr=None, relay_smtp=(relay_smtp_ip, relay_smtp_port), resend_timeout=resend_timeout, spool_path=spool_path)
     signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
     asyncore.loop()
