@@ -15,6 +15,8 @@
 """
 
 # standard library imports
+import sys
+import getopt
 import socket
 
 # related third party imports
@@ -184,8 +186,36 @@ class SpamC:
         return data
 
 
-def initialize():
-    return SpamC("localhost", 783)
+def initialize(options, long_options):
+
+    ip = "localhost"
+    port = 783
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], options, long_options)
+    except getopt.GetoptError, err:
+            # print help information and exit:
+            sys.stderr.write(str(err)+"\n") # will print something like "option -a not recognized"
+            #usage()
+            sys.exit(2)
+
+    for o, a in opts:
+        if o == "--spamc-ip":
+            ip = a
+        elif o == "--spamc-port":
+            port = a
+    return SpamC(ip, port)
+
+
+def get_options():
+    return "", ["spamc-ip=", "spamc-port="]
+
+
+def get_help():
+    return """
+--spamc-ip=IP
+--spamc-port=PORT
+"""
 
 
 def main():

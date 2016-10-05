@@ -4,6 +4,8 @@
 # standard library imports
 import os
 import re
+import sys
+import getopt
 import time
 
 # related third party imports
@@ -280,8 +282,20 @@ class AntiVirusScanStream(AntiVirusBase):
             raise BreakScanning()
 
 
-def initialize():
-    return AntiVirusScanFile()
+def initialize(options, long_options):
+    tmp_path = TMP_PATH
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], options, long_options)
+    except getopt.GetoptError, err:
+            # print help information and exit:
+            sys.stderr.write(str(err)+"\n") # will print something like "option -a not recognized"
+            #usage()
+            sys.exit(2)
+
+    for o, a in opts:
+        if o == "--tmp-path":
+            tmp_path = a
+    return AntiVirusScanFile(tmp_path=tmp_path)
 
 
 def main():
@@ -294,6 +308,16 @@ def main():
     print "AntiVirusScanFile"
     anti_virus = AntiVirusScanFile()
     print anti_virus.check_mail(test_mail.get_virus())
+
+
+def get_options():
+    return "", ["tmp-path="]
+
+
+def get_help():
+    return """
+--clamav-tmp-path=PATH
+"""
 
 
 if __name__ == "__main__":

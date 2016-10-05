@@ -44,13 +44,13 @@ class Worker(multiprocessing.Process):
     A Class to Check Mails
     """
 
-    def __init__(self, q):
+    def __init__(self, q, options, long_options):
         self._q = q
         self.__plugin_system = plugin_system.PluginSystem()
         self.__plugins = self.__plugin_system.load_plugins()
         self._plugins = []
         for plugin in self.__plugins:
-            self._plugins.append(plugin.initialize())
+            self._plugins.append(plugin.initialize(options, long_options))
             log("Initialized plugin %s" % plugin.__file__, STD_OUT)
         multiprocessing.Process.__init__(self)
         self.start()
@@ -233,7 +233,7 @@ class Phoenix(smtpd.SMTPServer):
     # SMTPChannel class to use for managing client connections
     channel_class = SMTPChannel
 
-    def __init__(self, localaddr=("localhost", 10024), remoteaddr=None, relay_smtp=("localhost", 10025), resend_timeout=60, spool_path="/var/spool/phoenix"):
+    def __init__(self, options, long_options, localaddr=("localhost", 10024), remoteaddr=None, relay_smtp=("localhost", 10025), resend_timeout=60, spool_path="/var/spool/phoenix"):
 
         # Relay SMTP
         self._relay_smtp_ip = relay_smtp[0]
@@ -252,7 +252,7 @@ class Phoenix(smtpd.SMTPServer):
         log("Found %s cpu-cores" % self._pool_size, STD_OUT)
         self._q = multiprocessing.Queue()
 
-        self._workers = [Worker(self._q) for i in xrange(self._pool_size)]
+        self._workers = [Worker(self._q, options, long_options) for i in xrange(self._pool_size)]
 
         #log("%s %s %s" % (APP_NAME, APP_VER, APP_STATUS), STD_OUT)
 
@@ -319,8 +319,18 @@ if __name__ == "__main__":
     resend_timeout=60
     spool_path="/var/spool/phoenix"
 
+    _plugin_system = plugin_system.PluginSystem()
+    plugins = _plugin_system.load_plugins()
+
+    options = "h"
+    long_options = ["help", "send-test-mail", "try-resend=", "parent-smtp-ip=", "parent-smtp-port=", "relay-smtp-ip=", "relay-smtp-port=", "ip=", "port=", "daemon"]
+
+    for plugin in plugins:
+        _options, _long_options = plugin.get_options()
+        options += _options
+        long_options += _long_options 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "send-test-mail", "try-resend=", "parent-smtp-ip=", "parent-smtp-port=", "relay-smtp-ip=", "relay-smtp-port=", "ip=", "port=", "daemon"])
+        opts, args = getopt.getopt(sys.argv[1:], options, long_options)
     except getopt.GetoptError, err:
             # print help information and exit:
             sys.stderr.write(str(err)+"\n") # will print something like "option -a not recognized"
@@ -369,9 +379,11 @@ if __name__ == "__main__":
 
 --spool-path=STRING
 """
+            for plugin in plugins:
+                print plugin.get_help()
             sys.exit(0)
 
-    phoenix = Phoenix(localaddr=(ip, port), remoteaddr=None, relay_smtp=(relay_smtp_ip, relay_smtp_port), resend_timeout=resend_timeout, spool_path=spool_path)
+    phoenix = Phoenix(options, long_options, localaddr=(ip, port), remoteaddr=None, relay_smtp=(relay_smtp_ip, relay_smtp_port), resend_timeout=resend_timeout, spool_path=spool_path)
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     asyncore.loop()
