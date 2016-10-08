@@ -357,9 +357,9 @@ if __name__ == "__main__":
         elif o == "--relay-smtp-port":
             relay_smtp_port = a
         elif o == "--try-resend":
-            resend_timeout=a
+            resend_timeout = a
         elif o == "--spool-path":
-            spool_path=a
+            spool_path = a
         elif o == "--workers":
             workers = int(a)
 
