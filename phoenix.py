@@ -233,7 +233,7 @@ class Phoenix(smtpd.SMTPServer):
     # SMTPChannel class to use for managing client connections
     channel_class = SMTPChannel
 
-    def __init__(self, options, long_options, localaddr=("localhost", 10024), remoteaddr=None, relay_smtp=("localhost", 10025), resend_timeout=60, spool_path="/var/spool/phoenix"):
+    def __init__(self, options, long_options, localaddr=("localhost", 10024), remoteaddr=None, relay_smtp=("localhost", 10025), resend_timeout=60, spool_path="/var/spool/phoenix", workers=None):
 
         # Relay SMTP
         self._relay_smtp_ip = relay_smtp[0]
@@ -248,8 +248,11 @@ class Phoenix(smtpd.SMTPServer):
         self.mail_nr = 0
         self.threads = []
 
-        self._pool_size = multiprocessing.cpu_count()
-        log("Found %s cpu-cores" % self._pool_size, STD_OUT)
+        if workers is None:
+            self._pool_size = multiprocessing.cpu_count()
+            log("Found %s cpu-cores" % self._pool_size, STD_OUT)
+        else:
+            self._pool_size = workers
         self._q = multiprocessing.Queue()
 
         self._workers = [Worker(self._q, options, long_options) for i in xrange(self._pool_size)]
@@ -318,12 +321,13 @@ if __name__ == "__main__":
     relay_smtp_port = 10025
     resend_timeout = 60
     spool_path = "/var/spool/phoenix"
+    workers = None
 
     _plugin_system = plugin_system.PluginSystem()
     plugins = _plugin_system.load_plugins()
 
     options = "h"
-    long_options = ["help", "send-test-mail", "try-resend=", "parent-smtp-ip=", "parent-smtp-port=", "relay-smtp-ip=", "relay-smtp-port=", "ip=", "port=", "daemon"]
+    long_options = ["help", "send-test-mail", "try-resend=", "parent-smtp-ip=", "parent-smtp-port=", "relay-smtp-ip=", "relay-smtp-port=", "ip=", "port=", "daemon", "workers="]
 
     for plugin in plugins:
         _options, _long_options = plugin.get_options()
@@ -356,6 +360,8 @@ if __name__ == "__main__":
             resend_timeout=a
         elif o == "--spool-path":
             spool_path=a
+        elif o == "--workers":
+            workers = int(a)
 
     # For Client and sql
     for o, a in opts:
@@ -378,12 +384,14 @@ if __name__ == "__main__":
 --port=PORT
 
 --spool-path=STRING
+
+--workers=COUNT
 """
             for plugin in plugins:
                 print plugin.get_help()
             sys.exit(0)
 
-    phoenix = Phoenix(options, long_options, localaddr=(ip, port), remoteaddr=None, relay_smtp=(relay_smtp_ip, relay_smtp_port), resend_timeout=resend_timeout, spool_path=spool_path)
+    phoenix = Phoenix(options, long_options, localaddr=(ip, port), remoteaddr=None, relay_smtp=(relay_smtp_ip, relay_smtp_port), resend_timeout=resend_timeout, spool_path=spool_path, workers=workers)
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     asyncore.loop()
