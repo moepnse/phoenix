@@ -316,8 +316,8 @@ if __name__ == "__main__":
     parent_stmp_port = 25
     relay_smtp_ip = "localhost"
     relay_smtp_port = 10025
-    resend_timeout=60
-    spool_path="/var/spool/phoenix"
+    resend_timeout = 60
+    spool_path = "/var/spool/phoenix"
 
     _plugin_system = plugin_system.PluginSystem()
     plugins = _plugin_system.load_plugins()
