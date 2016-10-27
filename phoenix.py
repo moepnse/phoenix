@@ -32,7 +32,7 @@ import multiprocessing.reduction
 import plugin_system
 
 from logging import log, STD_OUT, STD_ERR
-from daemon import daemonize
+from daemon import daemonize, stop
 
 
 RESEND_TIMEOUT = 60
@@ -327,7 +327,7 @@ if __name__ == "__main__":
     plugins = _plugin_system.load_plugins()
 
     options = "h"
-    long_options = ["help", "send-test-mail", "try-resend=", "parent-smtp-ip=", "parent-smtp-port=", "relay-smtp-ip=", "relay-smtp-port=", "ip=", "port=", "daemon", "workers="]
+    long_options = ["help", "send-test-mail", "try-resend=", "parent-smtp-ip=", "parent-smtp-port=", "relay-smtp-ip=", "relay-smtp-port=", "ip=", "port=", "daemon", "stop", "workers="]
 
     for plugin in plugins:
         _options, _long_options = plugin.get_options()
@@ -362,6 +362,9 @@ if __name__ == "__main__":
             spool_path = a
         elif o == "--workers":
             workers = int(a)
+        elif o == "--stop":
+            stop(PID_FILE)
+            sys.exit(0)
 
     # For Client and sql
     for o, a in opts:
@@ -386,6 +389,8 @@ if __name__ == "__main__":
 --spool-path=STRING
 
 --workers=COUNT
+
+--stop
 """
             for plugin in plugins:
                 print plugin.get_help()
