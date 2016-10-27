@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import signal
 import sys
 import os
 
@@ -172,3 +173,15 @@ def daemonize(pid_file, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null
     except OSError, err:
         log("fork #2 failed: %d (%s)" % (err.errno, err.strerror), STD_ERR)
         sys.exit(1)
+
+
+def get_pid(pid_file):
+    fh = open(pid_file, 'r')
+    pid = fh.read()
+    fh.close()
+    return int(pid)
+
+
+def stop(pid_file):
+    pid = get_pid(pid_file)
+    os.kill(pid, signal.SIGTERM)
